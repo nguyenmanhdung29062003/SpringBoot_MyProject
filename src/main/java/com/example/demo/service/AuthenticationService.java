@@ -6,8 +6,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.UUID;
 
+import org.mapstruct.ap.shaded.freemarker.template.utility.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -36,7 +38,8 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
 import lombok.experimental.NonFinal;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 public class AuthenticationService {
 
@@ -46,8 +49,9 @@ public class AuthenticationService {
 	@NonFinal
 	@Value("${jwt.signerKey}")
 	private String SIGNER_KEY;
+	
 
-	public TokenDTO authentication(LoginDTO dto) {
+	public TokenDTO authentication(UserDTO dto) {
 		if (userrepository.existsByUsername(dto.getUsername()) == false) {
 //			ném ra một ngoại lệ + message tương ứng
 			throw new AppException(ErrorCode.USER_NOT_EXIST);
@@ -56,11 +60,13 @@ public class AuthenticationService {
 		TokenDTO token = new TokenDTO();
 
 //		Tiến hành kiểm tra dữ liệu đã mã hóa
+		UserEntity userEntity1 = null;
 		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 		boolean result = false;
 		for (UserEntity userEntity2 : userentity) {
 			result = passwordEncoder.matches(dto.getPassword(), userEntity2.getPassword());
 			if (result == true) {
+				userEntity1 = userEntity2; 
 				break;
 			}
 		}
@@ -71,7 +77,7 @@ public class AuthenticationService {
 		}
 
 //	Thành công thì tạo một TOKEN
-		String token_value = generateToken(dto);
+		String token_value = generateToken(userEntity1);
 		
 		token.setToken(token_value);
 		token.setAuthenticated(result);
@@ -79,13 +85,24 @@ public class AuthenticationService {
 		return token;
 
 	}
+	//định dạng cho scope để lưu vào TOKEN
+	public String buildScope(UserEntity dto)
+	{
+		//ngăn cách nhau bằng khoảng trắng
+		StringJoiner stringJoiner = new StringJoiner(" ");
+		//kiểm tra có role hay chưa
+		if(!dto.getRoles().isEmpty()){
+			dto.getRoles().forEach(s -> stringJoiner.add(s));
+		}
+		return stringJoiner.toString();
+	}
 
-	private String generateToken(LoginDTO userdto) {
+	private String generateToken(UserEntity userdto) {
 //		Đầu tiên tạo header với thuật toán HS512
 		JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
 //		Tiếp theo tạo claimSet để cho vào payload
-
+		
 		JWTClaimsSet claimSet = new JWTClaimsSet.Builder()
 	            .issuer("https://example.com")
 	            .subject(userdto.getUsername())
@@ -94,7 +111,7 @@ public class AuthenticationService {
 	            .notBeforeTime(new Date())
 	            .issueTime(new Date())
 	            .jwtID(UUID.randomUUID().toString())
-	            .claim("custom_claim", "custom value")
+	            .claim("scope", buildScope(userdto))
 	            .build();
 		
 		Payload payload = new Payload(claimSet.toJSONObject());

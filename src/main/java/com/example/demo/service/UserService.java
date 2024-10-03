@@ -1,15 +1,18 @@
 package com.example.demo.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entity.UserEntity;
+import com.example.demo.enums.Role;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.mapper.UserMapper;
@@ -29,6 +32,12 @@ public class UserService {
 //		Mã hóa mât khẩu trước khi thêm vào
 		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 		usera.setPassword(passwordEncoder.encode(usera.getPassword()));
+		
+//update 26/9 set Role
+		HashSet<String> roles = new HashSet<>();
+		roles.add(Role.USER.name());
+		usera.setRoles(roles);
+		
 //		Luư xuống DataBase
 		userrepository.save(usera);
 //		chuyển sang DTO
@@ -36,6 +45,8 @@ public class UserService {
 	}
 	
 //	lay tat ca user update 24/9/2024
+	//kiểm tra người dùng có Role trong TOKEN SCOPE là Admin mới gọi đc hàm này
+	@PreAuthorize("hasAuthority('SCOPE_ADMIN')")
 	public List<UserDTO> getallusers(){
 		
 		List<UserDTO> listalldto = new ArrayList();
@@ -46,13 +57,12 @@ public class UserService {
 			listalldto.add(usermapper.toDTO(userEntity));
 		}
 		
-		
-		
-		
 		return listalldto;
-		
 	}
 
+	
+	
+	
 	public UserDTO find(String id) {
 		if (userrepository.existsById(id) == false) {
 //			ném ra một ngoại lệ + message tương ứng
@@ -61,6 +71,10 @@ public class UserService {
 		UserEntity a = userrepository.findOneById(id);
 		return usermapper.toDTO(a);
 	}
+	
+	
+	
+	
 
 	public UserDTO update(String id, UserDTO dto) {
 		if (userrepository.existsById(id) == false) {

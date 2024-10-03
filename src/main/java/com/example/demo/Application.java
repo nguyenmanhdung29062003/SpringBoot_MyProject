@@ -3,6 +3,7 @@ package com.example.demo;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +17,8 @@ import com.example.demo.entity.UserEntity;
 import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @RestController
 public class Application {
 
@@ -35,9 +37,15 @@ public class Application {
 //	update 24/92024
 	@GetMapping(value="/users")
 	public ApiResponse<List<UserDTO>> getUsers(){
+//		get infor đăng nhập, đang đc authicate hiện tại
+		var authenticated = SecurityContextHolder.getContext().getAuthentication();
+//		bây giờ lấy thông tin trong TOKEN và log ra
+		log.info("USER NAME : "+authenticated.getName());
 		
-		ApiResponse<List<UserDTO>> apires = new ApiResponse<List<UserDTO>>();
+		authenticated.getAuthorities().forEach(gra -> log.info(gra.getAuthority()));
 		
+		
+		ApiResponse<List<UserDTO>> apires = new ApiResponse<List<UserDTO>>();	
 		apires.setCode(200);
 		apires.setMessage("success");
 		apires.setResult(userservice.getallusers());

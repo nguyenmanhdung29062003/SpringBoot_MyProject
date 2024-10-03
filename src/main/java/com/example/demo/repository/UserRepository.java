@@ -8,11 +8,18 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.entity.UserEntity;
 
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity,String>{
+public interface UserRepository extends JpaRepository<UserEntity, String> {
 	UserEntity findOneById(String id);
+
 	boolean existsById(String id);
+
 	boolean existsByUsername(String username);
+
 	List<UserEntity> findOneByUsername(String username);
+
 //	update 24/9
 	List<UserEntity> findAll();
+
+//update 26/9
+	List<UserEntity> findByUsername(String username);
 }

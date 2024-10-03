@@ -12,6 +12,7 @@ import com.example.demo.dto.IntrospectRequest;
 import com.example.demo.dto.IntrospectResponse;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.TokenDTO;
+import com.example.demo.dto.UserDTO;
 import com.example.demo.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
 
@@ -23,7 +24,7 @@ public class AuthenticationAPI {
 	private AuthenticationService authenticationService;
 	
 	@PostMapping("/login")
-	public ApiResponse<TokenDTO> authenticate(@RequestBody @Valid LoginDTO dto){
+	public ApiResponse<TokenDTO> authenticate(@RequestBody @Valid UserDTO dto){
 		
 		ApiResponse<TokenDTO> apires = new ApiResponse<TokenDTO>();
 		apires.setCode(200);

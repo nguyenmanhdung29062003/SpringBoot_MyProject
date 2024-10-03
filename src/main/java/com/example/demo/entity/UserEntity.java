@@ -1,6 +1,7 @@
 package com.example.demo.entity;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,4 +37,6 @@ public class UserEntity {
 	
 	@Column(name = "DateofBirth")
 	private LocalDate dob;
+	
+	private Set<String> roles;
 }
