@@ -30,7 +30,7 @@ public class SecurityConfig {
 	@Value("${jwt.signerKey}")
 	private String SIGNER_KEY;
 	private final String[] PUBLIC_ENDPOINT_POST = { "/login", "/user"};
-	private final String[] PUBLIC_ENDPOINT_GET= {"/users"};
+	private final String[] PUBLIC_ENDPOINT_GET= {"/user/{id}"};
 
 	@Bean
 	// Nó định nghĩa một SecurityFilterChain, được sử dụng để cấu hình bảo mật cho
@@ -43,6 +43,7 @@ public class SecurityConfig {
 		// EndPoint cho các endpoint mà k cần bảo vệ
 		httpSecurity
 				.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINT_POST).permitAll()
+						.requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINT_GET).permitAll()
 //						kiểm tra trong TOKEN nếu là ADMIN thì được call đến endpoint này
 						//.requestMatchers(HttpMethod.GET,"/users").hasAuthority("SCOPE_ADMIN")
 						.anyRequest().authenticated());
@@ -52,7 +53,14 @@ public class SecurityConfig {
 		// đối với những endpoint mà k mở public thì ta muốn user cung cấp một TOKEN hợp
 		// lệ mới được access
 		// sd oauth2-resource-service
-		httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(JwtConfigurer -> JwtConfigurer.decoder(jwtDecoder()))); //xác thực TOKEN
+		//xác thực TOKEN
+		httpSecurity.oauth2ResourceServer(oauth2 -> 
+													oauth2
+														.jwt(JwtConfigurer -> JwtConfigurer.decoder(jwtDecoder()))
+														.authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+					
+				
+				); 
 		
 		return httpSecurity.build();
 	}
