@@ -29,7 +29,7 @@ public class SecurityConfig {
 	@NonFinal
 	@Value("${jwt.signerKey}")
 	private String SIGNER_KEY;
-	private final String[] PUBLIC_ENDPOINT_POST = { "/login", "/user"};
+	private final String[] PUBLIC_ENDPOINT_POST = { "/login", "/user","/logoutaccount","/introspect"};
 	private final String[] PUBLIC_ENDPOINT_GET= {"/user/{id}"};
 
 	@Bean

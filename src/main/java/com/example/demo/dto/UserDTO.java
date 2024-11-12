@@ -2,6 +2,8 @@ package com.example.demo.dto;
 
 import java.util.Set;
 
+import com.example.demo.entity.RoleEntity;
+
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;

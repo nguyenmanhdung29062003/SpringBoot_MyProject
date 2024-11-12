@@ -1,9 +1,10 @@
-package com.example.demo;
+package com.example.demo.controller;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +27,7 @@ public class Application {
 	private UserService userservice;
 
 	@PostMapping("/user")
-	public ApiResponse<UserDTO> addUser(@RequestBody @Valid UserEntity usea) {
+	public ApiResponse<UserDTO> addUser(@RequestBody @Valid UserDTO usea) {
 		ApiResponse<UserDTO> apires = new ApiResponse<UserDTO>();
 		apires.setCode(202);
 		apires.setMessage("success");
@@ -42,6 +43,11 @@ public class Application {
 //		bây giờ lấy thông tin trong TOKEN và log ra
 		log.info("USER NAME : "+authenticated.getName());
 		
+		Jwt jwt = (Jwt) authenticated.getPrincipal();
+		String roles = jwt.getClaimAsString("roles");
+		log.info("TOKEN ROLE  :"+roles);
+		
+		
 		authenticated.getAuthorities().forEach(gra -> log.info(gra.getAuthority()));
 		
 		
@@ -49,6 +55,18 @@ public class Application {
 		apires.setCode(200);
 		apires.setMessage("success");
 		apires.setResult(userservice.getallusers());
+		
+		return apires;
+		
+	}
+	
+	//6/10/2024
+	@GetMapping(value="/user/myinfo")
+	public ApiResponse<UserDTO> getMyinfo(){
+		ApiResponse<UserDTO> apires = new ApiResponse<UserDTO>();	
+		apires.setCode(200);
+		apires.setMessage("success");
+		apires.setResult(userservice.getMyInfo());
 		
 		return apires;
 		

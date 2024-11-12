@@ -3,9 +3,13 @@ package com.example.demo.entity;
 import java.time.LocalDate;
 import java.util.Set;
 
+import org.hibernate.annotations.ManyToAny;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -38,5 +42,6 @@ public class UserEntity {
 	@Column(name = "DateofBirth")
 	private LocalDate dob;
 	
-	private Set<String> roles;
+	@ManyToMany
+	private Set<RoleEntity> roles;
 }

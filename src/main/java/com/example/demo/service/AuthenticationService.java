@@ -21,9 +21,11 @@ import com.example.demo.dto.IntrospectResponse;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.TokenDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.entity.InvalidatedToken;
 import com.example.demo.entity.UserEntity;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.InvalidatedTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -39,6 +41,7 @@ import com.nimbusds.jwt.SignedJWT;
 
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @Service
 public class AuthenticationService {
@@ -46,10 +49,12 @@ public class AuthenticationService {
 	@Autowired
 	private UserRepository userrepository;
 
+	@Autowired
+	private InvalidatedTokenRepository invalidatedTokenRepository;
+
 	@NonFinal
 	@Value("${jwt.signerKey}")
 	private String SIGNER_KEY;
-	
 
 	public TokenDTO authentication(UserDTO dto) {
 		if (userrepository.existsByUsername(dto.getUsername()) == false) {
@@ -66,7 +71,7 @@ public class AuthenticationService {
 		for (UserEntity userEntity2 : userentity) {
 			result = passwordEncoder.matches(dto.getPassword(), userEntity2.getPassword());
 			if (result == true) {
-				userEntity1 = userEntity2; 
+				userEntity1 = userEntity2;
 				break;
 			}
 		}
@@ -78,23 +83,41 @@ public class AuthenticationService {
 
 //	Thành công thì tạo một TOKEN
 		String token_value = generateToken(userEntity1);
-		
+
 		token.setToken(token_value);
 		token.setAuthenticated(result);
 
 		return token;
 
 	}
-	//định dạng cho scope để lưu vào TOKEN
-	public String buildScope(UserEntity dto)
-	{
-		//ngăn cách nhau bằng khoảng trắng
+
+	// định dạng cho scope để lưu vào TOKEN, lưu các Permission
+	public String buildScope(UserEntity dto) {
+		// ngăn cách nhau bằng khoảng trắng
 		StringJoiner stringJoiner = new StringJoiner(" ");
-		//kiểm tra có role hay chưa
-		if(!dto.getRoles().isEmpty()){
-			dto.getRoles().forEach(s -> stringJoiner.add(s));
+		// kiểm tra có role hay chưa
+		if (!dto.getRoles().isEmpty()) {
+			dto.getRoles().forEach(s -> stringJoiner.add("ROLE_" + s.getName()));
+			dto.getRoles().forEach(s -> {
+				if (!s.getPermissions().isEmpty()) {
+					s.getPermissions().forEach(y -> stringJoiner.add(y.getName()));
+				}
+
+			});
 		}
 		return stringJoiner.toString();
+	}
+
+	// thiết lập role
+	public String buildRoles(UserEntity entity) {
+		// ngăn cách nhau bằng khoảng trắng
+		StringJoiner stringJoiner = new StringJoiner(" ");
+		if (!entity.getRoles().isEmpty()) {
+			entity.getRoles().forEach(s -> stringJoiner.add("ROLE_" + s.getName()));
+		}
+
+		return stringJoiner.toString();
+
 	}
 
 	private String generateToken(UserEntity userdto) {
@@ -102,57 +125,104 @@ public class AuthenticationService {
 		JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
 //		Tiếp theo tạo claimSet để cho vào payload
-		
-		JWTClaimsSet claimSet = new JWTClaimsSet.Builder()
-	            .issuer("https://example.com")
-	            .subject(userdto.getUsername())
-	            .audience("https://yourdomain.com")
-	            .expirationTime(new Date(new Date().getTime() + 60 * 1000 * 30)) // hết hạn sau 30 phút
-	            .notBeforeTime(new Date())
-	            .issueTime(new Date())
-	            .jwtID(UUID.randomUUID().toString())
-	            .claim("scope", buildScope(userdto))
-	            .build();
-		
+
+		JWTClaimsSet claimSet = new JWTClaimsSet.Builder().issuer("https://example.com")
+
+				.subject(userdto.getUsername()).audience("https://yourdomain.com")
+
+				.expirationTime(new Date(new Date().getTime() + 60 * 1000 * 30)) // hết hạn sau 30 phút
+
+				.notBeforeTime(new Date()).issueTime(new Date())
+				// UUID là tạo ID cho TOKEN gồm chuỗi 32 ký tự đc tạo ngẫu nhiên
+
+				.jwtID(UUID.randomUUID().toString())
+				// .claim("roles", buildRoles(userdto))
+				.claim("scope", buildScope(userdto)).claim("userId", userdto.getId()) // Thêm userId vào claim
+				.build();
+
 		Payload payload = new Payload(claimSet.toJSONObject());
 
-		JWSObject jwsObject = new JWSObject(header,payload);
+		JWSObject jwsObject = new JWSObject(header, payload);
 //		Sau khi đầy đủ dữ liêu ta tiến hành ký, hash Token
-		
+
 		try {
 			jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
 			return jwsObject.serialize();
-		}
-		catch(JOSEException e) {
-            throw new RuntimeException("K thể tạo TOKEN");
+		} catch (JOSEException e) {
+			throw new RuntimeException("K thể tạo TOKEN");
 		}
 	}
-	
+
+	// nhận vào 1 TOKEN và khi logout thì chỉ ta thêm thông tin TOKEN đó vào bảng
+	// tblInvalidatedTOKEN mà ta đã tạo trong Entity để lưu các TOKEN hết hạn
+	public IntrospectResponse logout(IntrospectRequest requestToken) throws JOSEException, ParseException {
+		IntrospectResponse token_valid_respone = new IntrospectResponse();
+
+//		lấy token
+		String token = requestToken.getToken();
+		log.warn("da den day2");
+//		xác minh chữ lý, .getBytes() chuyển đổi chuỗi thành một mảng byte
+//		MACVerifier là lớp sd để xác minh chữ ký dựa trên thuật toán  MAC
+		JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+
+//		SignedJWT là lớp đại diên cho JWT đã được ký cho phép truy cập các thành phần khác như header, payload, sign_nature
+//		phân tích chuỗi mã thông báo thành một đối tượng SignedJWT		
+		SignedJWT signedJWT = SignedJWT.parse(token);
+		boolean result_verified = signedJWT.verify(verifier);// kiểm tra xác thực true/ false
+
+//		kiểm tra TOKEN đã hết hạn hay chưa
+		Date experiTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+//		kiểm tra thời gian hết hạn phải sau thời điêmr hiện tại
+		boolean check_experiTime = experiTime.after(new Date());
+
+		log.warn("da den day2");
+		// nếu TOKEN đã hết hạn hoặc lỗi
+		if (!(result_verified && check_experiTime)) {
+			throw new AppException(ErrorCode.PASS_ERROR);
+		}
+
+		// nếu TOKEN đã có trong table
+		if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+			throw new AppException(ErrorCode.PASS_ERROR);
+		}
+
+		// nếu TOKEN còn dùng đc mà muốn Logout thì tiền hành cho nó vào table
+		String idTOKEN = signedJWT.getJWTClaimsSet().getJWTID();
+		Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+		// tiến hành insert vô table
+		InvalidatedToken tokenentity = new InvalidatedToken(idTOKEN, expiryTime);
+		invalidatedTokenRepository.save(tokenentity);
+
+		token_valid_respone.setValid(true);
+		return token_valid_respone;
+
+	}
+
 	public IntrospectResponse introspect(IntrospectRequest requestToken) throws JOSEException, ParseException {
 		IntrospectResponse token_valid_respone = new IntrospectResponse();
-		
+
 //		lấy token
 		String token = requestToken.getToken();
 //		xác minh chữ lý, .getBytes() chuyển đổi chuỗi thành một mảng byte
 //		MACVerifier là lớp sd để xác minh chữ ký dựa trên thuật toán  MAC
 		JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-		
+
 //		SignedJWT là lớp đại diên cho JWT đã được ký cho phép truy cập các thành phần khác như header, payload, sign_nature
 //		phân tích chuỗi mã thông báo thành một đối tượng SignedJWT		
 		SignedJWT signedJWT = SignedJWT.parse(token);
 		boolean result_verified = signedJWT.verify(verifier);// kiểm tra xác thực true/ false
-		
+
 //		kiểm tra TOKEN đã hết hạn hay chưa
 		Date experiTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 //		kiểm tra thời gian hết hạn phải sau thời điêmr hiện tại
 		boolean check_experiTime = experiTime.after(new Date());
 
 // gán dữ liệu để return
-		token_valid_respone.setValid(result_verified&&check_experiTime);
-		
+		token_valid_respone.setValid(result_verified && check_experiTime);
+
 		return token_valid_respone;
-		
-		
+
 	}
 
 }

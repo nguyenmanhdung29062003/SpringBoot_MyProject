@@ -8,7 +8,9 @@ public enum ErrorCode {
 	PASS_ERROR(505, "Mật khẩu phải tối thiểu 8 ký tự", HttpStatus.BAD_REQUEST),
 	USER_NOT_EXIST(500, "Không tìm thấy người dùng này",HttpStatus.NOT_FOUND),
 	AUTHENTICATION_FAIL(500,"Xác thực thất bại", HttpStatus.UNAUTHORIZED),
-	UNAUTHORIZED(403,"Bạn không có quyền truy cập trang này", HttpStatus.FORBIDDEN)
+	UNAUTHORIZED(403,"Bạn không có quyền truy cập trang này", HttpStatus.FORBIDDEN),
+	PERMISSION_EXIST(402,"Permission này đã tồn tại",HttpStatus.BAD_REQUEST),
+	PERMISSION_ERROR(402,"Permission này không tồn tại",HttpStatus.BAD_REQUEST),
 	;
 	
 	private HttpStatusCode statusCode;
