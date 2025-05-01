@@ -14,10 +14,12 @@ import com.example.demo.apiresponse.ApiResponse;
 import com.example.demo.dto.PermissionDTO;
 import com.example.demo.service.PermissionService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@Tag(name="Permission Controller")
 public class PermissionAPI {
 
 		@Autowired

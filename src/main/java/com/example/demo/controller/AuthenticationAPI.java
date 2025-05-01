@@ -16,11 +16,13 @@ import com.example.demo.dto.UserDTO;
 import com.example.demo.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@Tag(name="Authentication Controller")
 public class AuthenticationAPI {
 	@Autowired
 	private AuthenticationService authenticationService;
@@ -35,6 +37,17 @@ public class AuthenticationAPI {
 
 		return apires;
 
+	}
+	
+	@PostMapping("/refreshToken")
+	public ApiResponse<IntrospectRequest> refresh_token(@RequestBody IntrospectRequest token) throws JOSEException, ParseException{
+		ApiResponse<IntrospectRequest> apires = new ApiResponse<IntrospectRequest>();
+		
+		apires.setCode(200);
+		apires.setMessage("success");
+		apires.setResult(authenticationService.refreshToken(token));
+		
+		return apires;
 	}
 
 //	@PostMapping(value="/logoutaccount")

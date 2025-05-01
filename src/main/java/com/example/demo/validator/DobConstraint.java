@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
-//taget : annotation sẽ được apply ở đâu, vs trường là FIELD, phương thức là METHOD,...
+//target : annotation sẽ được apply ở đâu, vs trường là FIELD, phương thức là METHOD,...
 @Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE})
 //retention : annotation sẽ được xử lý lúc nào
 @Retention(RetentionPolicy.RUNTIME)

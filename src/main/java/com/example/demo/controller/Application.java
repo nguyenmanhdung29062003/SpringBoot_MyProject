@@ -17,22 +17,27 @@ import com.example.demo.dto.UserDTO;
 import com.example.demo.entity.UserEntity;
 import com.example.demo.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
+@Tag(name="User Controller")
 public class Application {
 
 	@Autowired
 	private UserService userservice;
 
 	@PostMapping("/user")
-	public ApiResponse<UserDTO> addUser(@RequestBody @Valid UserDTO usea) {
+	@Operation(summary = "Create User", description = "API Create New User")
+	public ApiResponse<UserDTO> creaeteUser(@RequestBody @Valid UserDTO usea) {
 		ApiResponse<UserDTO> apires = new ApiResponse<UserDTO>();
 		apires.setCode(202);
 		apires.setMessage("success");
+		log.info("Controller: create User");
 		apires.setResult(userservice.save(usea));
-
+		
 		return apires;
 	}
 //	update 24/92024

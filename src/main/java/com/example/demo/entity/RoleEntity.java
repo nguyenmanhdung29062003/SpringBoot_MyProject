@@ -11,12 +11,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table(name = "tblRole")
 public class RoleEntity {
 	

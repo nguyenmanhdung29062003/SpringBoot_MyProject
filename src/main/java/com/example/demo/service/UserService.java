@@ -22,6 +22,8 @@ import com.example.demo.mapper.UserMapper;
 import com.example.demo.repository.RolerRepository;
 import com.example.demo.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 public class UserService {
 	@Autowired
@@ -33,6 +35,8 @@ public class UserService {
 	private RolerRepository roleRepository;
 
 	public UserDTO save(UserDTO usera) {
+		
+		log.info("Service: create User");
 		if (userrepository.existsById(usera.getId())) {
 			throw new AppException(ErrorCode.USER_EXISTED);
 		}
@@ -78,6 +82,18 @@ public class UserService {
 
 		return usermapper.toDTO(user,roleRepository);
 	}
+	
+	public UserDTO getMyInfo2() {
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        UserEntity user = (UserEntity) userrepository.findByUsername(name);
+        if(user == null) {
+        	throw new AppException(ErrorCode.USER_NOT_EXIST);
+        }
+
+        return usermapper.toDTO(user, roleRepository);
+    }
 
 	public UserDTO find(String id) {
 		if (userrepository.existsById(id) == false) {

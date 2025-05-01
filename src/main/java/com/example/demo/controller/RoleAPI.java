@@ -15,7 +15,10 @@ import com.example.demo.dto.PermissionDTO;
 import com.example.demo.dto.RoleDTO;
 import com.example.demo.service.RoleService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController 
+@Tag(name="Role Controller")
 public class RoleAPI {
 	
 	@Autowired

@@ -26,11 +26,15 @@ public interface UserMapper {
 	
 	@Mapping(target = "roles", source = "roles")
 	UserDTO toDTO(UserEntity entity,@Context RolerRepository roleRepository);
+	
 //	@mappingtarget giúp map data từ DTO đc gửi từ client sang ENTITY để câp nhật vào database
 	@Mapping(target = "roles", source = "roles")
 	void updateUser(@MappingTarget UserEntity userentty, UserDTO userdto,@Context RolerRepository roleRepository);
 	
-	 default Set<RoleEntity> mapRoles(Set<String> rolesNames, @Context RolerRepository roleRepository) {
+	
+	//ánh xạ tùy chỉnh để chuyển đổi khi nguồn source và đích target khác nhau
+	//nó tự gọi trong quá trình ánh xạ vì có default, nếu k có thì các phương thức này là abstract method do đang ở interFace. 
+	default Set<RoleEntity> mapRoles(Set<String> rolesNames, @Context RolerRepository roleRepository) {
 	        Set<RoleEntity> roleEntities = new HashSet<>();
 	        for (String name : rolesNames) {
 	            	RoleEntity role = roleRepository.findByName(name);
@@ -42,7 +46,8 @@ public interface UserMapper {
 	        return roleEntities;
 	    }
 
-	    default Set<String> mapRolestoName(Set<RoleEntity> roleEntities) {
+	 
+	default Set<String> mapRolestoName(Set<RoleEntity> roleEntities) {
 	        Set<String> roleNames = new HashSet<>();
 	        for (RoleEntity role : roleEntities) {
 	            String name =role.getName();

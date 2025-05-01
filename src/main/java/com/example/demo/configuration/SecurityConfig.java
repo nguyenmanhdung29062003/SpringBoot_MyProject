@@ -2,6 +2,7 @@ package com.example.demo.configuration;
 
 import javax.crypto.spec.SecretKeySpec;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import lombok.experimental.NonFinal;
+
 //Chú thích này cho phép phân quyền trên METHOD
 @EnableMethodSecurity
 ////Chú thích này chỉ ra rằng lớp này là một nguồn định nghĩa bean cho ngữ cảnh ứng dụng, cấu hình.
@@ -29,8 +31,13 @@ public class SecurityConfig {
 	@NonFinal
 	@Value("${jwt.signerKey}")
 	private String SIGNER_KEY;
-	private final String[] PUBLIC_ENDPOINT_POST = { "/login", "/user","/logoutaccount","/introspect"};
-	private final String[] PUBLIC_ENDPOINT_GET= {"/user/{id}"};
+	private final String[] PUBLIC_ENDPOINT_POST = { "/login", "/user", "/logoutaccount", "/introspect", "/refreshToken",
+			"/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui.html", "/webjars/**" };
+	private final String[] PUBLIC_ENDPOINT_GET = { "/user/{id}", "/swagger-ui/**", "/v3/api-docs/**",
+			"/swagger-resources/**", "/swagger-ui.html", "/webjars/**" };
+
+	@Autowired
+	private CustomJWTDecoder customJWTDecoder;
 
 	@Bean
 	// Nó định nghĩa một SecurityFilterChain, được sử dụng để cấu hình bảo mật cho
@@ -41,37 +48,40 @@ public class SecurityConfig {
 		// vd k cần bảo vệ : đăng ký tk, trang chủ, đăng nhập
 		// ta tiến hành cấu hình bằng requestMatchers(...) chứa 2 param : Method và
 		// EndPoint cho các endpoint mà k cần bảo vệ
-		httpSecurity
-				.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINT_POST).permitAll()
-						.requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINT_GET).permitAll()
+		httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINT_POST)
+				.permitAll().requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINT_GET).permitAll()
 //						kiểm tra trong TOKEN nếu là ADMIN thì được call đến endpoint này
-						//.requestMatchers(HttpMethod.GET,"/users").hasAuthority("SCOPE_ADMIN")
-						.anyRequest().authenticated());
+				// .requestMatchers(HttpMethod.GET,"/users").hasAuthority("SCOPE_ADMIN")
+				.anyRequest().authenticated());
 		// tắt CSRF
 		httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
 		// đối với những endpoint mà k mở public thì ta muốn user cung cấp một TOKEN hợp
 		// lệ mới được access
 		// sd oauth2-resource-service
-		//xác thực TOKEN
-		httpSecurity.oauth2ResourceServer(oauth2 -> 
-													oauth2
-														.jwt(JwtConfigurer -> JwtConfigurer.decoder(jwtDecoder()))
-														.authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-					
-				
-				); 
-		
+		// xác thực TOKEN
+		httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(JwtConfigurer -> JwtConfigurer.decoder(customJWTDecoder)) // xác
+																															// thực
+																															// TOKEN
+																															// có
+																															// xét
+																															// th
+																															// lôgout
+				.authenticationEntryPoint(new JwtAuthenticationEntryPoint()) // khi xác thực false thì ta sẽ điều hướng
+																				// user đi đâu, trong TH này ta chỉ cần
+																				// trả về một cái ErrorMessage thôi
+
+		);
+
 		return httpSecurity.build();
 	}
 
-	@Bean 
+	@Bean
 	public JwtDecoder jwtDecoder() {
-		//bao gồm 2 tham số : secretKey và Thuật toán
-		SecretKeySpec secretkey = new SecretKeySpec(SIGNER_KEY.getBytes(),"HS512");
+		// bao gồm 2 tham số : secretKey và Thuật toán
+		SecretKeySpec secretkey = new SecretKeySpec(SIGNER_KEY.getBytes(), "HS512");
 		return NimbusJwtDecoder.withSecretKey(secretkey).macAlgorithm(MacAlgorithm.HS512).build();
-		
+
 	}
-	
 
 }

@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ApplicationInitConfig {
 	
 	@Bean
+	//ràng buộc điều kiện Bean bằng Bean Convention
+	@ConditionalOnProperty(prefix="spring", value="datasource.driverClassName", havingValue="com.mysql.cj.jdbc.Driver")
 	ApplicationRunner applicationRunner(UserRepository userRepository, RolerRepository roleRepository) {
 		return args -> {
 			if(userRepository.findByUsername("admin").isEmpty()) {
