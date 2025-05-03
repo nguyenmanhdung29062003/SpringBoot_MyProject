@@ -72,8 +72,7 @@ public class UserServiceTest {
 
 		userDTOin = new UserDTO().builder().username("Dung ne").password("12345678").roles(role).build();
 
-		userEntity = new UserEntity().builder().id("user01").username("Dung ne").build();
-
+		userEntity = new UserEntity().builder().id("user01").username("Dung ne").build(); //chỉ cần được thấy em cười vui thấy em bình yên là mọi buồn vui mọi lo toan cuộc sôngs như dần tan biến
 	}
 
 	@Test

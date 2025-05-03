@@ -11,13 +11,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer.JwtConfigurer;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import org.springframework.web.cors.CorsConfiguration;
+
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
 
 import lombok.experimental.NonFinal;
 
@@ -52,6 +55,7 @@ public class SecurityConfig {
 				.permitAll().requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINT_GET).permitAll()
 //						kiểm tra trong TOKEN nếu là ADMIN thì được call đến endpoint này
 				// .requestMatchers(HttpMethod.GET,"/users").hasAuthority("SCOPE_ADMIN")
+				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.anyRequest().authenticated());
 		// tắt CSRF
 		httpSecurity.csrf(AbstractHttpConfigurer::disable);
@@ -72,7 +76,6 @@ public class SecurityConfig {
 																				// trả về một cái ErrorMessage thôi
 
 		);
-
 		return httpSecurity.build();
 	}
 
@@ -84,4 +87,5 @@ public class SecurityConfig {
 
 	}
 
+	
 }
