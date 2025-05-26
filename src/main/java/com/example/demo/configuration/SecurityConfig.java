@@ -1,5 +1,8 @@
 package com.example.demo.configuration;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,12 +19,9 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-
 import org.springframework.web.cors.CorsConfiguration;
-
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.experimental.NonFinal;
 
@@ -46,6 +47,10 @@ public class SecurityConfig {
 	// Nó định nghĩa một SecurityFilterChain, được sử dụng để cấu hình bảo mật cho
 	// ứng dụng.
 	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+
+		httpSecurity.cors(Customizer.withDefaults());
+		// ✅ 1. Enable CORS using the CorsConfigurationSource bean
+
 		// những end point "/user, /login,/...." nào ta sẽ bảo vệ, và những end point ta
 		// cho user truy cập vào mà k cần bả vệ
 		// vd k cần bảo vệ : đăng ký tk, trang chủ, đăng nhập
@@ -55,8 +60,7 @@ public class SecurityConfig {
 				.permitAll().requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINT_GET).permitAll()
 //						kiểm tra trong TOKEN nếu là ADMIN thì được call đến endpoint này
 				// .requestMatchers(HttpMethod.GET,"/users").hasAuthority("SCOPE_ADMIN")
-				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-				.anyRequest().authenticated());
+				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().anyRequest().authenticated());
 		// tắt CSRF
 		httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
@@ -87,5 +91,20 @@ public class SecurityConfig {
 
 	}
 
-	
+	// ✅ 2. Define the CorsConfigurationSource bean for Spring Security
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		// 👇 Replace with your frontend's actual origin(s)
+		configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(List.of("*")); // Or specify headers like "Authorization", "Content-Type"
+		// configuration.setAllowCredentials(true); // Uncomment if your frontend sends
+		// credentials and you need them
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration); // Apply this CORS configuration to all paths
+		return source;
+	}
+
 }

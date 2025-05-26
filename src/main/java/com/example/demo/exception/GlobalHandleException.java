@@ -1,6 +1,8 @@
 package com.example.demo.exception;
 
 
+import java.sql.SQLIntegrityConstraintViolationException;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -51,4 +53,18 @@ public class GlobalHandleException {
 		
 	}
 	
+	
+	@ExceptionHandler(value=SQLIntegrityConstraintViolationException.class)
+	ResponseEntity<ApiResponse> handlingAccessDeniedException(SQLIntegrityConstraintViolationException ex){
+		
+		ErrorCode errorCode = ErrorCode.USER_EXISTED;
+		ApiResponse apires = new ApiResponse();
+		
+		apires.setCode(errorCode.getCode());
+		apires.setMessage(errorCode.getMessage());
+		
+		return ResponseEntity.status(errorCode.getStatusCode()).body(apires);
+		
+		
+	}
 }

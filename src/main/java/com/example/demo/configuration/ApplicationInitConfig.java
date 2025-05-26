@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.demo.entity.PermissionEntity;
 import com.example.demo.entity.RoleEntity;
 import com.example.demo.entity.UserEntity;
 import com.example.demo.enums.Role;
@@ -28,12 +29,25 @@ public class ApplicationInitConfig {
 	@Bean
 	//ràng buộc điều kiện Bean bằng Bean Convention
 	@ConditionalOnProperty(prefix="spring", value="datasource.driverClassName", havingValue="com.mysql.cj.jdbc.Driver")
-	ApplicationRunner applicationRunner(UserRepository userRepository, RolerRepository roleRepository) {
+	ApplicationRunner applicationRunner(UserRepository userRepository, RolerRepository roleRepository, PermisionRepository permisionRepository) {
 		return args -> {
 			if(userRepository.findByUsername("admin").isEmpty()) {
 				//tim kiem
 				
+				//tạo permision
+				if(permisionRepository.findByName("ALL") == null)
+				{
+					permisionRepository.save(new PermissionEntity().builder().name("ALL").description("ALL").build());
+				}
+				PermissionEntity permission = permisionRepository.findByName("ALL");
+				Set<PermissionEntity> permissions =  new HashSet<PermissionEntity>();
+				permissions.add(permission);
+				
 				//tạo Role
+				if(roleRepository.findByName("ADMIN")==null) {
+					roleRepository.save(new RoleEntity().builder().name("ADMIN").description("ADMIN").permissions(permissions).build());
+				}
+				
 				RoleEntity role = roleRepository.findByName("ADMIN");
 				log.warn(role.getPermissions().toString());
 				

@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
+import org.aspectj.bridge.AbortException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.apiresponse.ApiResponse;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entity.UserEntity;
+import com.example.demo.exception.AppException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,13 +35,13 @@ public class Application {
 
 	@PostMapping("/user")
 	@Operation(summary = "Create User", description = "API Create New User")
-	public ApiResponse<UserDTO> creaeteUser(@RequestBody @Valid UserDTO usea) {
+	public ApiResponse<UserDTO> creaeteUser(@RequestBody @Valid UserDTO usea) throws SQLIntegrityConstraintViolationException {
 		ApiResponse<UserDTO> apires = new ApiResponse<UserDTO>();
 		apires.setCode(202);
 		apires.setMessage("success");
 		log.info("Controller: create User");
-		apires.setResult(userservice.save(usea));
 		
+			apires.setResult(userservice.save(usea));	
 		return apires;
 	}
 //	update 24/92024

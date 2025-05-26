@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+
+    testing_mysql:
+      container_name: testing_mysql
+      image: mysql:8.0.36-debian
+      restart: always
+      ports:
+        - 3309:3306
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+      volumes:
+        - ./init_db:/docker-entrypoint-initdb.d/:ro
+        - ./mysql_data/:/var/lib/mysql
+      networks:
+      - app_network
+      healthcheck:
+        test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -proot --silent && exit 0 || exit 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 30s
+        
+
+    api:
+      container_name: Identity_App
+      build:
+        context: .
+        dockerfile: Dockerfile
+      ports:
+        - "8080:8080"
+      depends_on:
+        testing_mysql: 
+          condition: service_healthy
+      environment:
+        DBMS_CONNECTION: testing_mysql
+        DB_PORT: 3306
+        DB_USER: root
+        PASS_CONNECT: root
+        DB_NAME: identity_service
+      networks:
+      - app_network
+    
+networks:
+  app_network:

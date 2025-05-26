@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,12 +35,12 @@ public class UserService {
 	@Autowired
 	private RolerRepository roleRepository;
 
-	public UserDTO save(UserDTO usera) {
+	public UserDTO save(UserDTO usera) throws SQLIntegrityConstraintViolationException {
 		
-		log.info("Service: create User");
-		if (userrepository.existsById(usera.getId())) {
-			throw new AppException(ErrorCode.USER_EXISTED);
-		}
+//		log.info("Service: create User");
+//		if (userrepository.existsByUsername(usera.getUsername())) {
+//			throw new AppException(ErrorCode.USER_EXISTED);
+//		}
 //		Mã hóa mât khẩu trước khi thêm vào
 		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 		usera.setPassword(passwordEncoder.encode(usera.getPassword()));
@@ -49,12 +50,20 @@ public class UserService {
 		//roles.add(Role.USER.name());
 		//usera.setRoles(roles);
 
-//		Luư xuống DataBase
+		//		Luư xuống DataBase
 		userrepository.save(usermapper.toUser(usera, roleRepository));
 //		chuyển sang DTO
 		return usermapper.toDTO(usermapper.toUser(usera, roleRepository),roleRepository);
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
 //	lay tat ca user update 24/9/2024
 	// kiểm tra người dùng có Role trong TOKEN SCOPE là Admin mới gọi đc hàm này
 	//@PreAuthorize("hasAuthority('SCOPE_ROLE_ADMIN')")
